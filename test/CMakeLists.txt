@@ -1,7 +1,4 @@
 add_executable(${PROJECT_NAME}-test test.cpp)
 
-# link
-target_link_libraries(${PROJECT_NAME}-test
-  PRIVATE ${PROJECT_NAME}-client ${PROJECT_NAME}-server
-  )
-
+target_compile_features(${PROJECT_NAME}-test PRIVATE cxx_std_14)
+#target_compile_options(${PROJECT_NAME}-test PRIVATE -O2 -Wall)
