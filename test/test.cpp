@@ -28,6 +28,7 @@ public:
 
   bool naive(std::size_t nServers, std::size_t nClients,
              std::size_t nKvPairs) const {
+    using namespace std::chrono_literals;
     assert(nServers <= 5);
     // generate the test case
     std::cerr << "generating the test cases: nServers = " << nServers
@@ -43,10 +44,10 @@ public:
     std::cerr << "running...\n";
     auto servers = createServers(nServers);
     auto clients = createClients(nClients, "naive_test.in");
-    for (auto pid : servers)
-      kill(pid, SIGKILL);
     for (auto pid : clients)
       waitpid(pid, nullptr, 0);
+    for (auto pid : servers)
+      kill(pid, SIGKILL);
 
     // check the result
     std::cerr << "checking...\n";
@@ -96,10 +97,10 @@ public:
       }
     }
 
-    for (auto pid : servers)
-      kill(pid, SIGKILL);
     for (auto pid : clients)
       waitpid(pid, nullptr, 0);
+    for (auto pid : servers)
+      kill(pid, SIGKILL);
 
     // check the result
     std::cerr << "checking...\n";
@@ -188,7 +189,7 @@ private:
   }
 
   pid_t createServer(std::size_t id) const {
-    std::cerr << "Creating server " << id << std::endl;
+    std::cerr << "creating server " << id << std::endl;
     auto pid = fork();
     if (pid == 0) { // child
       int devNull = open("/dev/null", O_WRONLY);
@@ -218,14 +219,14 @@ private:
     auto pid = fork();
     if (pid == 0) { // child
       std::string file = "client" + std::to_string(id) + ".out";
-      int fd = open(file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IWUSR);
+      int fd = open(file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IWUSR | S_IRUSR);
       dup2(fd, STDOUT_FILENO);
       close(fd);
       fd = open(inputFile.c_str(), O_RDONLY, S_IRUSR);
       dup2(fd, STDIN_FILENO);
       close(fd);
 
-      execl(clientCmd.c_str(), "client", std::to_string(id).c_str());
+      auto tmp = execl(clientCmd.c_str(), "client", std::to_string(id).c_str());
       assert(false);
     }
     return pid;
