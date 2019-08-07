@@ -47,7 +47,7 @@ public:
     for (auto pid : clients)
       waitpid(pid, nullptr, 0);
     for (auto pid : servers)
-      kill(pid, SIGKILL);
+      kill(pid, SIGTERM);
 
     // check the result
     std::cerr << "checking...\n";
@@ -100,7 +100,7 @@ public:
     for (auto pid : clients)
       waitpid(pid, nullptr, 0);
     for (auto pid : servers)
-      kill(pid, SIGKILL);
+      kill(pid, SIGTERM);
 
     // check the result
     std::cerr << "checking...\n";
@@ -219,7 +219,8 @@ private:
     auto pid = fork();
     if (pid == 0) { // child
       std::string file = "client" + std::to_string(id) + ".out";
-      int fd = open(file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IWUSR | S_IRUSR);
+      int fd =
+          open(file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IWUSR | S_IRUSR);
       dup2(fd, STDOUT_FILENO);
       close(fd);
       fd = open(inputFile.c_str(), O_RDONLY, S_IRUSR);
@@ -234,7 +235,7 @@ private:
 
   bool checkAlive(const std::vector<pid_t> &pids) const {
     for (auto pid : pids) {
-      if (!kill(pid, 0))
+      if (waitpid(pid, nullptr, WNOHANG) == pid)
         return true;
     }
     return false;
@@ -249,22 +250,22 @@ int main(int argc, char **argv) {
   assert(argc == 3);
   RaftTest test(argv[1], argv[2]);
 
-  std::cerr << "running naive_test0:\n";
-  std::cerr << (test.naive(3, 1, 10) ? "passed" : "failed");
-  std::cerr << std::endl << std::endl;
-  //  std::cerr << "running naive_test1:\n";
-  //  std::cerr << (test.naive(3, 3, 100) ? "passed" : "failed");
-  //  std::cerr << std::endl << std::endl;
-  //  std::cerr << "running naive_test2:\n";
-  //  std::cerr << (test.naive(5, 5, 5000) ? "passed" : "failed");
-  //  std::cerr << std::endl << std::endl;
-  //  std::cerr << "running naive_test3:\n";
-  //  std::cerr << (test.naive(3, 5, 5000) ? "passed" : "failed");
-  //  std::cerr << std::endl << std::endl;
+//  std::cerr << "running naive_test0:\n";
+//  std::cerr << (test.naive(3, 1, 10) ? "passed" : "failed");
+//  std::cerr << std::endl << std::endl;
+//  std::cerr << "running naive_test1:\n";
+//  std::cerr << (test.naive(3, 3, 100) ? "passed" : "failed");
+//  std::cerr << std::endl << std::endl;
+//  std::cerr << "running naive_test2:\n";
+//  std::cerr << (test.naive(5, 5, 5000) ? "passed" : "failed");
+//  std::cerr << std::endl << std::endl;
+//  std::cerr << "running naive_test3:\n";
+//  std::cerr << (test.naive(3, 5, 5000) ? "passed" : "failed");
+//  std::cerr << std::endl << std::endl;
 
-  //  std::cerr << "running comprehensive_test:\n";
-  //  std::cerr << (test.comprehensive(5000, 0.5) ? "passed" : "failed");
-  //  std::cerr << std::endl << std::endl;
+  std::cerr << "running comprehensive_test:\n";
+  std::cerr << (test.comprehensive(1000, 0.3) ? "passed" : "failed");
+  std::cerr << std::endl << std::endl;
 
   return 0;
 }
