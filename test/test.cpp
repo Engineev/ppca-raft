@@ -60,7 +60,7 @@ public:
     return true;
   }
 
-  bool comprehensive(std::size_t testCaseSize, double p) const {
+  bool comprehensive(std::size_t testCaseSize, double p, std::size_t timeOut = 180) const {
     using namespace std::chrono_literals;
 
     // generate the test case
@@ -83,7 +83,9 @@ public:
     auto randServer = std::bind(serversDist, eng);
     std::uniform_real_distribution<double> uniformDist(0, 1);
     auto rand = std::bind(uniformDist, eng);
-    while (checkAlive(clients)) {
+
+    auto start = std::chrono::system_clock::now();
+    while (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - start).count() < timeOut) {
       std::this_thread::sleep_for(2s);
       auto x = rand();
       auto srvIdx = randServer();
@@ -98,7 +100,7 @@ public:
     }
 
     for (auto pid : clients)
-      waitpid(pid, nullptr, 0);
+      kill(pid, SIGTERM);
     for (auto pid : servers)
       kill(pid, SIGTERM);
 
