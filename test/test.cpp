@@ -60,22 +60,24 @@ public:
     return true;
   }
 
-  bool comprehensive(std::size_t testCaseSize, double p, std::size_t timeOut = 180) const {
+  bool comprehensive(std::size_t testCaseSize, double p,
+                     std::size_t timeOut = 180) const {
     using namespace std::chrono_literals;
 
     // generate the test case
     std::cerr << "generating the test cases: testCaseSize = " << testCaseSize
               << ", p = " << p << std::endl;
-    auto kv = generateRandomKvPairs(testCaseSize);
+    auto kvs = generateRandomKvPairs(testCaseSize);
     std::ofstream fout("comprehensive_test.in");
-    dumpKvPairs(kv, fout);
+    dumpKvPairs(kvs, fout);
+    fout.close();
     AnswerMap ans;
-    simulate(ans, kv);
+    simulate(ans, kvs);
 
     // test
     std::cerr << "running...\n";
     std::size_t nServers = 5, nClients = 5;
-    auto servers = createServers(nServers, 2000);
+    auto servers = createServers(nServers, 0000);
     auto clients = createClients(nClients, "comprehensive_test.in");
 
     std::mt19937 eng(std::random_device{}());
@@ -85,7 +87,9 @@ public:
     auto rand = std::bind(uniformDist, eng);
 
     auto start = std::chrono::system_clock::now();
-    while (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - start).count() < timeOut) {
+    while (std::chrono::duration_cast<std::chrono::seconds>(
+               std::chrono::system_clock::now() - start)
+               .count() < timeOut) {
       std::this_thread::sleep_for(2s);
       auto x = rand();
       auto srvIdx = randServer();
@@ -101,12 +105,30 @@ public:
 
     for (auto pid : clients)
       kill(pid, SIGTERM);
+
+    fout.open("comprehensive_test_get.in");
+    for (auto &kv : kvs)
+      fout << "get " << kv.first << std::endl;
+
+    clients.clear();
+    clients = createClients(nClients, "comprehensive_test_get.in", nClients);
+    for (auto pid : clients)
+      waitpid(pid, nullptr, 0);
     for (auto pid : servers)
       kill(pid, SIGTERM);
 
     // check the result
     std::cerr << "checking...\n";
     for (std::size_t i = 0; i < nClients; ++i) {
+      std::ifstream fin("client" + std::to_string(i) + ".out");
+      auto res = readResult(fin);
+      if (!checkResult(ans, res))
+        return false;
+    }
+    for (auto &kv : kvs) {
+      ans[kv.first] = {kv.second};
+    }
+    for (std::size_t i = nClients; i < nClients * 2; ++i) {
       std::ifstream fin("client" + std::to_string(i) + ".out");
       auto res = readResult(fin);
       if (!checkResult(ans, res))
@@ -254,18 +276,18 @@ int main(int argc, char **argv) {
   assert(argc == 3);
   RaftTest test(argv[1], argv[2]);
 
-//  std::cerr << "running naive_test0:\n";
-//  std::cerr << (test.naive(3, 1, 10) ? "passed" : "failed");
-//  std::cerr << std::endl << std::endl;
-//  std::cerr << "running naive_test1:\n";
-//  std::cerr << (test.naive(3, 3, 100) ? "passed" : "failed");
-//  std::cerr << std::endl << std::endl;
-//  std::cerr << "running naive_test2:\n";
-//  std::cerr << (test.naive(5, 5, 5000) ? "passed" : "failed");
-//  std::cerr << std::endl << std::endl;
-//  std::cerr << "running naive_test3:\n";
-//  std::cerr << (test.naive(3, 5, 5000) ? "passed" : "failed");
-//  std::cerr << std::endl << std::endl;
+  //  std::cerr << "running naive_test0:\n";
+  //  std::cerr << (test.naive(3, 1, 10) ? "passed" : "failed");
+  //  std::cerr << std::endl << std::endl;
+  //  std::cerr << "running naive_test1:\n";
+  //  std::cerr << (test.naive(3, 3, 100) ? "passed" : "failed");
+  //  std::cerr << std::endl << std::endl;
+  //  std::cerr << "running naive_test2:\n";
+  //  std::cerr << (test.naive(5, 5, 5000) ? "passed" : "failed");
+  //  std::cerr << std::endl << std::endl;
+  //  std::cerr << "running naive_test3:\n";
+  //  std::cerr << (test.naive(3, 5, 5000) ? "passed" : "failed");
+  //  std::cerr << std::endl << std::endl;
 
   std::cerr << "running comprehensive_test:\n";
   std::cerr << (test.comprehensive(1000, 0.3, 120) ? "passed" : "failed");
