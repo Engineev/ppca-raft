@@ -167,6 +167,8 @@ private:
   bool checkResult(
       const AnswerMap &mp,
       const std::vector<std::pair<std::string, std::string>> &output) const {
+    if (output.empty())
+      return false;
     for (auto &kv : output) {
       if (mp.find(kv.first) == mp.end())
         return false;
@@ -266,7 +268,7 @@ int main(int argc, char **argv) {
 //  std::cerr << std::endl << std::endl;
 
   std::cerr << "running comprehensive_test:\n";
-  std::cerr << (test.comprehensive(1000, 0.3) ? "passed" : "failed");
+  std::cerr << (test.comprehensive(1000, 0.3, 120) ? "passed" : "failed");
   std::cerr << std::endl << std::endl;
 
   return 0;
